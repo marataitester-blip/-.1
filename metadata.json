@@ -1,0 +1,5 @@
+{
+  "name": "Astral Hero Tarot",
+  "description": "An interactive, bilingual web application for the 'Astral Hero' Tarot deck, featuring daily card readings, online spreads, a full card encyclopedia, and a Gemini AI-powered personality test to discover your personal Arcana.",
+  "requestFramePermissions": []
+}

@@ -1,11 +1,31 @@
-<div align="center">
+# Astral Hero Tarot
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+An interactive, bilingual web application for the 'Astral Hero' Tarot deck, featuring daily card readings, online spreads, a full card encyclopedia, and a Gemini AI-powered personality test.
 
-  <h1>Built with AI Studio</h2>
+## Tech Stack
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+-   React & TypeScript
+-   Tailwind CSS
+-   Google Gemini API (`@google/genai`)
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Deployment on Vercel
 
-</div>
+This project is a static web application and can be deployed easily on Vercel.
+
+1.  **Connect Your Git Repository:**
+    -   Push the project files to a new GitHub, GitLab, or Bitbucket repository.
+    -   In your Vercel dashboard, click "Add New... > Project" and import your repository.
+
+2.  **Configure the Project:**
+    -   For "Framework Preset", select **"Other"**.
+    -   Leave the "Build Command" and other build settings empty, as there is no build step.
+
+3.  **Set Environment Variables (Required):**
+    -   In your Vercel project's "Settings" tab, go to "Environment Variables".
+    -   Add a new variable:
+        -   **Name:** `API_KEY`
+        -   **Value:** Your Google Gemini API key.
+    -   The application will not function without this key.
+
+4.  **Deploy:**
+    -   Click the "Deploy" button. Your application will be live shortly.

@@ -1,0 +1,103 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslations } from '../hooks/useTranslations';
+import tarotDeck from '../constants/deck';
+import { TarotCard } from '../types';
+import Card from '../components/Card';
+import SpeakerIcon from '../components/SpeakerIcon';
+
+const Home: React.FC = () => {
+  const { t, language } = useTranslations();
+  const [cardOfDay, setCardOfDay] = useState<TarotCard | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    const getCardOfDay = () => {
+      const today = new Date();
+      // Create a seed based on the date (YYYYMMDD) to ensure the same card is shown for the whole day.
+      const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+      
+      // Simple pseudo-random number based on the seed.
+      const random = Math.sin(seed) * 10000;
+      const pseudoRandomValue = random - Math.floor(random);
+      
+      const randomIndex = Math.floor(pseudoRandomValue * tarotDeck.length);
+      const dailyCard = tarotDeck[randomIndex];
+      setCardOfDay(dailyCard);
+    };
+
+    getCardOfDay();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const handleSpeak = (e: React.MouseEvent, card: TarotCard) => {
+    e.preventDefault();
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
+    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+
+  return (
+    <div className="text-center py-8 md:py-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300 leading-tight">
+            {t('homeTitle')}
+          </h1>
+          <p className="mt-4 text-lg text-gray-300 max-w-xl">
+            {t('homeSubtitle')}
+          </p>
+          <div className="mt-8 p-6 bg-purple-900/30 rounded-lg border border-purple-700 max-w-xl">
+             <p className="text-gray-200 leading-relaxed">{t('homeDescription')}</p>
+          </div>
+          <Link
+            to="/readings"
+            className="mt-10 inline-block bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full text-lg hover:bg-yellow-300 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/20"
+          >
+            {t('homeCTA')}
+          </Link>
+        </div>
+        <div className="flex flex-col items-center justify-center">
+            {cardOfDay && (
+                <Link to={`/card/${cardOfDay.id}`} className="flex flex-col items-center animate-fade-in group">
+                    <div className="transition-transform duration-300 group-hover:scale-105">
+                        <Card card={cardOfDay} size="large" />
+                    </div>
+                    <div className="mt-6 max-w-xs text-center p-4 bg-black/20 rounded-lg">
+                        <h3 className="text-2xl font-serif text-yellow-400 transition-colors duration-300 group-hover:text-yellow-200">{cardOfDay.name[language]}</h3>
+                        <p className="mt-2 text-gray-300">{cardOfDay.description[language]}</p>
+                        <div className="mt-4">
+                            <button 
+                                onClick={(e) => handleSpeak(e, cardOfDay)}
+                                aria-label={t('playAudio')}
+                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                            >
+                                <SpeakerIcon isSpeaking={isSpeaking} />
+                            </button>
+                        </div>
+                    </div>
+                </Link>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
