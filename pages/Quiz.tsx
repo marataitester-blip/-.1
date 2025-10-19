@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 import { analyzeTextAndPickCard, generateCardImage, QuizResult } from '../services/geminiService';
@@ -52,6 +51,18 @@ const Quiz: React.FC = () => {
     }
   };
 
+  const handleSaveImage = () => {
+    if (!generatedImageUrl) return;
+
+    const link = document.createElement('a');
+    link.href = generatedImageUrl;
+    const sanitizedCardName = result?.cardName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    link.download = `astral-hero-${sanitizedCardName}.jpeg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="text-center max-w-4xl mx-auto">
       <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300">{t('quizTitle')}</h1>
@@ -95,7 +106,17 @@ const Quiz: React.FC = () => {
             <div className="flex flex-col items-center">
                 <h3 className="text-2xl font-serif text-yellow-400 mb-4">{t('quizYourImage')}</h3>
                 {generatedImageUrl ? (
-                    <ImageRenderer src={generatedImageUrl} alt={`AI generated ${result.cardName}`} className="rounded-xl shadow-2xl shadow-purple-900/60 w-64 h-[426px] md:w-72 md:h-[480px]" />
+                    <div className="relative group">
+                        <ImageRenderer src={generatedImageUrl} alt={`AI generated ${result.cardName}`} className="rounded-xl shadow-2xl shadow-purple-900/60 w-64 h-[426px] md:w-72 md:h-[480px]" />
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                            <button
+                                onClick={handleSaveImage}
+                                className="bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full text-lg hover:bg-yellow-300 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/20"
+                            >
+                                {t('quizSaveCard')}
+                            </button>
+                        </div>
+                    </div>
                 ) : (
                     <div className="w-64 h-[426px] md:w-72 md:h-[480px] bg-purple-900/50 rounded-xl flex items-center justify-center">
                         <LoadingSpinner />
