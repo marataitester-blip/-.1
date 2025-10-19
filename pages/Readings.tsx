@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 import tarotDeck from '../constants/deck';
@@ -6,6 +7,7 @@ import Card from '../components/Card';
 import SpeakerIcon from '../components/SpeakerIcon';
 import { interpretSpread, SpreadInterpretation } from '../services/geminiService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 type SpreadType = 'day' | 'three' | 'hero';
 
@@ -30,17 +32,10 @@ const Readings: React.FC = () => {
   const [activeSpread, setActiveSpread] = useState<SpreadType | null>(null);
   const [drawnCards, setDrawnCards] = useState<(TarotCard | null)[]>([]);
   const [areCardsFlipped, setAreCardsFlipped] = useState(false);
-  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [spreadInterpretation, setSpreadInterpretation] = useState<SpreadInterpretation | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Cleanup speechSynthesis on component unmount
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
+  const { play, stop, isPlaying, isLoading, activeId } = useAudioPlayer();
   
   useEffect(() => {
     const generateInterpretation = async () => {
@@ -67,24 +62,11 @@ const Readings: React.FC = () => {
 
 
   const handleSpeak = (text: string, index: number) => {
-    if (speakingIndex === index) {
-        window.speechSynthesis.cancel();
-        setSpeakingIndex(null);
-        return;
-    }
-
-    window.speechSynthesis.cancel(); // Stop any previous speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onend = () => setSpeakingIndex(null);
-    utterance.onerror = () => setSpeakingIndex(null);
-    setSpeakingIndex(index);
-    window.speechSynthesis.speak(utterance);
+    play(text, `reading-${index}`);
   };
 
   const handleDrawCards = (spread: SpreadType) => {
-    window.speechSynthesis.cancel();
-    setSpeakingIndex(null);
+    stop();
     setActiveSpread(spread);
     setAreCardsFlipped(false);
     setSpreadInterpretation(null);
@@ -127,9 +109,13 @@ const Readings: React.FC = () => {
                     <button 
                         onClick={() => handleSpeak(card.longDescription[language], index)}
                         aria-label={t('playAudio')}
-                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
+                        disabled={isLoading && activeId === `reading-${index}`}
                     >
-                        <SpeakerIcon isSpeaking={speakingIndex === index} />
+                        <SpeakerIcon 
+                            isSpeaking={isPlaying && activeId === `reading-${index}`} 
+                            isLoading={isLoading && activeId === `reading-${index}`}
+                        />
                     </button>
                 </div>
                )}

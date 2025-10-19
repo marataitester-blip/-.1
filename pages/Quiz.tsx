@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 import { analyzeTextAndPickCard, generateCardImage, QuizResult } from '../services/geminiService';
@@ -6,6 +7,8 @@ import { TarotCard } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Card from '../components/Card';
 import ImageRenderer from '../components/ImageRenderer';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import SpeakerIcon from '../components/SpeakerIcon';
 
 const Quiz: React.FC = () => {
   const { t, language } = useTranslations();
@@ -13,14 +16,15 @@ const Quiz: React.FC = () => {
   const [result, setResult] = useState<QuizResult | null>(null);
   const [matchedCard, setMatchedCard] = useState<TarotCard | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
+  const { play, isPlaying, isLoading: isAudioLoading, activeId } = useAudioPlayer();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
 
-    setIsLoading(true);
+    setIsGenerating(true);
     setError('');
     setResult(null);
     setMatchedCard(null);
@@ -44,7 +48,7 @@ const Quiz: React.FC = () => {
       setError(t('error'));
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -60,18 +64,18 @@ const Quiz: React.FC = () => {
           placeholder={t('quizInputPlaceholder')}
           rows={8}
           className="w-full p-4 bg-purple-900/50 border-2 border-purple-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-colors duration-300"
-          disabled={isLoading}
+          disabled={isGenerating}
         />
         <button
           type="submit"
           className="mt-6 inline-block bg-yellow-400 text-purple-900 font-bold py-3 px-12 rounded-full text-lg hover:bg-yellow-300 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isLoading || !userInput.trim()}
+          disabled={isGenerating || !userInput.trim()}
         >
-          {isLoading ? t('generating') : t('quizSubmit')}
+          {isGenerating ? t('generating') : t('quizSubmit')}
         </button>
       </form>
 
-      {isLoading && (
+      {isGenerating && (
         <div className="mt-12">
           <LoadingSpinner />
         </div>
@@ -100,7 +104,20 @@ const Quiz: React.FC = () => {
             </div>
             
             <div className="md:col-span-2">
-                <h3 className="text-2xl font-serif text-yellow-400 mt-8 mb-4">{t('quizYourPortrait')}</h3>
+                <div className="flex items-center justify-between mt-8 mb-4">
+                    <h3 className="text-2xl font-serif text-yellow-400">{t('quizYourPortrait')}</h3>
+                    <button
+                        onClick={() => result && play(result.portrait, 'quiz-portrait')}
+                        aria-label={t('playAudio')}
+                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
+                        disabled={isAudioLoading && activeId === 'quiz-portrait'}
+                    >
+                        <SpeakerIcon
+                            isSpeaking={isPlaying && activeId === 'quiz-portrait'}
+                            isLoading={isAudioLoading && activeId === 'quiz-portrait'}
+                        />
+                    </button>
+                </div>
                 <div className="p-6 bg-purple-900/30 rounded-lg border border-purple-700">
                     <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{result.portrait}</p>
                 </div>

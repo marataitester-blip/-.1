@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
@@ -5,19 +6,17 @@ import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import Card from '../components/Card';
 import SpeakerIcon from '../components/SpeakerIcon';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 const Home: React.FC = () => {
   const { t, language } = useTranslations();
   const [cardOfDay, setCardOfDay] = useState<TarotCard | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const { play, isPlaying, isLoading, activeId } = useAudioPlayer();
 
   useEffect(() => {
     const getCardOfDay = () => {
       const today = new Date();
-      // Create a seed based on the date (YYYYMMDD) to ensure the same card is shown for the whole day.
       const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-      
-      // Simple pseudo-random number based on the seed.
       const random = Math.sin(seed) * 10000;
       const pseudoRandomValue = random - Math.floor(random);
       
@@ -29,29 +28,10 @@ const Home: React.FC = () => {
     getCardOfDay();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
-
   const handleSpeak = (e: React.MouseEvent, card: TarotCard) => {
     e.preventDefault();
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
+    play(card.longDescription[language], card.id);
   };
-
 
   return (
     <div className="text-center py-8 md:py-16">
@@ -86,9 +66,13 @@ const Home: React.FC = () => {
                             <button 
                                 onClick={(e) => handleSpeak(e, cardOfDay)}
                                 aria-label={t('playAudio')}
-                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
+                                disabled={isLoading && activeId === cardOfDay.id}
                             >
-                                <SpeakerIcon isSpeaking={isSpeaking} />
+                                <SpeakerIcon 
+                                    isSpeaking={isPlaying && activeId === cardOfDay.id} 
+                                    isLoading={isLoading && activeId === cardOfDay.id}
+                                />
                             </button>
                         </div>
                     </div>
