@@ -7,6 +7,7 @@ import SpeakerIcon from '../components/SpeakerIcon';
 import { interpretSpread, SpreadInterpretation, generateSpeech } from '../services/geminiService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { decode, decodeAudioData } from '../utils/audioUtils';
+import { translations } from '../constants/translations';
 
 type SpreadType = 'day' | 'three' | 'hero';
 
@@ -39,6 +40,9 @@ const Readings: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferCache = useRef<Map<number, AudioBuffer>>(new Map());
+  
+  const [interpretationAudio, setInterpretationAudio] = useState<{ part: keyof SpreadInterpretation | null, status: 'idle' | 'generating' | 'playing' }>({ part: null, status: 'idle' });
+  const interpretationAudioCache = useRef<Map<string, AudioBuffer>>(new Map());
 
   useEffect(() => {
     // Lazy-initialize AudioContext
@@ -50,6 +54,8 @@ const Readings: React.FC = () => {
     };
   }, []);
   
+  const spreadLabels = activeSpread ? spreadConfigs[activeSpread].labelsKey.map(key => t(key as any)) : [];
+  
   useEffect(() => {
     const generateInterpretation = async () => {
       if (areCardsFlipped && activeSpread && (activeSpread === 'three' || activeSpread === 'hero') && drawnCards.every(c => c !== null)) {
@@ -58,12 +64,24 @@ const Readings: React.FC = () => {
         try {
           const validCards = drawnCards.filter((c): c is TarotCard => c !== null);
           if (validCards.length === drawnCards.length) {
-            const spreadName = t(activeSpread === 'three' ? 'threeCards' : 'heroPath');
-            const interpretation = await interpretSpread(validCards, spreadName, language);
+            
+            // The prompt sent to the AI should be consistently in English to avoid errors.
+            // We'll use the English translations for the spread name and card positions for the API call.
+            // The `language` parameter will tell the AI which language to respond in.
+            const spreadNameEn = translations.en[activeSpread === 'three' ? 'threeCards' : 'heroPath'];
+            const labelsEn = spreadConfigs[activeSpread].labelsKey.map(key => translations.en[key as keyof typeof translations.en]);
+
+            const cardsWithPositions = validCards.map((card, index) => ({
+                card,
+                position: labelsEn[index] || `Card ${index + 1}`, // Use English labels for the API
+            }));
+            
+            const interpretation = await interpretSpread(cardsWithPositions, spreadNameEn, language);
+
             setSpreadInterpretation(interpretation);
           }
         } catch (err) {
-          setError(t('error'));
+            setError(t('error'));
         } finally {
           setIsGenerating(false);
         }
@@ -83,11 +101,12 @@ const Readings: React.FC = () => {
       return;
     }
     
-    if (audioStatus.status === 'generating') return;
+    if (audioStatus.status === 'generating' || interpretationAudio.status === 'generating') return;
 
     if (audioSourceRef.current) {
         audioSourceRef.current.stop();
     }
+    setInterpretationAudio({ part: null, status: 'idle' });
     
     if (audioCtx.state === 'suspended') await audioCtx.resume();
     
@@ -124,12 +143,68 @@ const Readings: React.FC = () => {
     }
   };
 
+  const handleSpeakInterpretation = async (part: keyof SpreadInterpretation) => {
+    const audioCtx = audioContextRef.current;
+    const textToSpeak = spreadInterpretation?.[part];
+    if (!audioCtx || !textToSpeak) return;
+
+    if (interpretationAudio.part === part && interpretationAudio.status === 'playing') {
+        audioSourceRef.current?.stop();
+        setInterpretationAudio({ part: null, status: 'idle' });
+        return;
+    }
+    
+    if (audioStatus.status === 'generating' || interpretationAudio.status === 'generating') return;
+
+    if (audioSourceRef.current) {
+        audioSourceRef.current.stop();
+    }
+    setAudioStatus({ index: null, status: 'idle' });
+    
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    
+    try {
+        let bufferToPlay: AudioBuffer;
+        const cacheKey = `${part}_${language}`;
+        const cachedBuffer = interpretationAudioCache.current.get(cacheKey);
+
+        if (cachedBuffer) {
+            bufferToPlay = cachedBuffer;
+        } else {
+            setInterpretationAudio({ part: part, status: 'generating' });
+            const base64Audio = await generateSpeech(textToSpeak);
+            const rawAudio = decode(base64Audio);
+            const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+            interpretationAudioCache.current.set(cacheKey, decodedBuffer);
+            bufferToPlay = decodedBuffer;
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = bufferToPlay;
+        source.connect(audioCtx.destination);
+        source.onended = () => {
+            setInterpretationAudio(prev => prev.part === part ? { part: null, status: 'idle' } : prev);
+            audioSourceRef.current = null;
+        };
+        source.start(0);
+        audioSourceRef.current = source;
+        setInterpretationAudio({ part: part, status: 'playing' });
+
+    } catch (error) {
+        console.error(`Failed to play audio for interpretation part "${part}"`, error);
+        setInterpretationAudio({ part: null, status: 'idle' });
+    }
+  };
+
+
   const handleDrawCards = (spread: SpreadType) => {
     audioSourceRef.current?.stop();
     setAudioStatus({ index: null, status: 'idle' });
+    setInterpretationAudio({ part: null, status: 'idle' });
     setActiveSpread(spread);
     setAreCardsFlipped(false);
     setSpreadInterpretation(null);
+    interpretationAudioCache.current.clear();
     setIsGenerating(false);
     setError(null);
     
@@ -143,7 +218,25 @@ const Readings: React.FC = () => {
     }, 500);
   };
   
-  const spreadLabels = activeSpread ? spreadConfigs[activeSpread].labelsKey.map(key => t(key as any)) : [];
+  const renderInterpretationSection = (part: keyof SpreadInterpretation, title: string) => (
+    <div>
+        <h3 className="text-2xl font-serif text-yellow-400 mb-2 flex items-center gap-4">
+            {title}
+            <button
+                onClick={() => handleSpeakInterpretation(part)}
+                aria-label={`${t('playAudio')} for ${title}`}
+                disabled={(interpretationAudio.status === 'generating' && interpretationAudio.part !== part)}
+                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
+            >
+                {interpretationAudio.part === part && interpretationAudio.status === 'generating'
+                    ? <LoadingSpinner size="small" />
+                    : <SpeakerIcon isSpeaking={interpretationAudio.part === part && interpretationAudio.status === 'playing'} />
+                }
+            </button>
+        </h3>
+        <p>{spreadInterpretation?.[part]}</p>
+    </div>
+  );
 
 
   return (
@@ -199,22 +292,9 @@ const Readings: React.FC = () => {
 
           {spreadInterpretation && (
             <div className="mt-8 text-left space-y-6 text-gray-300 leading-relaxed text-lg p-8 bg-purple-900/30 rounded-lg border border-purple-700">
-              <div>
-                <h3 className="text-2xl font-serif text-yellow-400 mb-2">{t('interpretationGeneral')}</h3>
-                <p>{spreadInterpretation.general}</p>
-              </div>
-              <div>
-                <h3 className="text-2xl font-serif text-yellow-400 mb-2">{t('interpretationRelationships')}</h3>
-                <p>{spreadInterpretation.relationships}</p>
-              </div>
-              <div>
-                <h3 className="text-2xl font-serif text-yellow-400 mb-2">{t('interpretationFinance')}</h3>
-                <p>{spreadInterpretation.finance}</p>
-              </div>
-              <div>
-                <h3 className="text-2xl font-serif text-yellow-400 mb-2">{t('interpretationHealth')}</h3>
-                <p>{spreadInterpretation.health}</p>
-              </div>
+                {spreadInterpretation.relationships && renderInterpretationSection('relationships', t('interpretationRelationships'))}
+                {spreadInterpretation.finance && renderInterpretationSection('finance', t('interpretationFinance'))}
+                {spreadInterpretation.health && renderInterpretationSection('health', t('interpretationHealth'))}
             </div>
           )}
         </div>

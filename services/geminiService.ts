@@ -12,16 +12,25 @@ export interface QuizResult {
 }
 
 export interface SpreadInterpretation {
-  general: string;
   relationships: string;
   finance: string;
   health: string;
 }
 
+const sanitizeJsonResponse = (text: string): string => {
+  let sanitizedText = text.trim();
+  if (sanitizedText.startsWith("```json")) {
+    sanitizedText = sanitizedText.slice(7, -3).trim();
+  } else if (sanitizedText.startsWith("`")) {
+    sanitizedText = sanitizedText.slice(1, -1).trim();
+  }
+  return sanitizedText;
+};
+
+
 export const analyzeTextAndPickCard = async (userInput: string, lang: 'en' | 'ru'): Promise<QuizResult> => {
   const model = 'gemini-2.5-flash';
   
-  // Fix: Define `cardNames` from the imported `tarotDeck` to be used in the prompt.
   const cardNames = tarotDeck.map(card => card.name.en).join(', ');
   
   const prompt = `
@@ -57,7 +66,7 @@ export const analyzeTextAndPickCard = async (userInput: string, lang: 'en' | 'ru
       },
     });
 
-    const jsonString = response.text;
+    const jsonString = sanitizeJsonResponse(response.text);
     const result: QuizResult = JSON.parse(jsonString);
     
     // Validate that the returned card name is one of the valid names
@@ -142,25 +151,45 @@ export const generateSpeech = async (text: string): Promise<string> => {
 };
 
 
-export const interpretSpread = async (cards: TarotCard[], spreadName: string, lang: 'en' | 'ru'): Promise<SpreadInterpretation> => {
+export const interpretSpread = async (cardsWithPositions: { card: TarotCard; position: string }[], spreadName: string, lang: 'en' | 'ru'): Promise<SpreadInterpretation> => {
   const model = 'gemini-2.5-flash';
 
-  const cardDetails = cards.map(card => `${card.name.en}: ${card.longDescription.en}`).join('\n');
+  const cardDetails = cardsWithPositions.map(item =>
+      `Position "${item.position}" is the card ${item.card.name.en}: ${item.card.longDescription.en}`
+  ).join('\n');
 
   const prompt = `
-    You are a wise and insightful Tarot reader. Analyze the following Tarot spread: "${spreadName}".
-    The cards drawn are:
-    ${cardDetails}
+      You are a wise and insightful Tarot reader. Analyze the following Tarot spread: "${spreadName}".
+      The cards drawn, with their positions, are:
+      ${cardDetails}
 
-    Based on the combination and interplay of these cards, provide a holistic interpretation. The tone should be supportive and empowering.
-    First, give a general summary of the spread's message.
-    Then, provide specific advice and insights for three key life areas: relationships, finance/career, and health/well-being.
+      Based on the combination, interplay, and positions of these cards, provide a holistic interpretation. The tone should be supportive and empowering.
+      Provide specific advice and insights for three key life areas: relationships, finance/career, and health/well-being.
 
-    IMPORTANT: Each of the four sections (general, relationships, finance, health) must be a concise paragraph, limited to a maximum of five lines each.
+      IMPORTANT: Each of the three sections (relationships, finance, health) must be a concise paragraph, limited to a maximum of five lines each.
 
-    The entire response must be in ${lang === 'ru' ? 'Russian' : 'English'}.
-    Return the result in JSON format only.
-  `;
+      The entire response must be in ${lang === 'ru' ? 'Russian' : 'English'}.
+      Return the result in JSON format only.
+    `;
+    
+  const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        relationships: {
+          type: Type.STRING,
+          description: "Specific advice and insights related to relationships, limited to a maximum of five lines."
+        },
+        finance: {
+          type: Type.STRING,
+          description: "Specific advice and insights related to finance and career, limited to a maximum of five lines."
+        },
+        health: {
+          type: Type.STRING,
+          description: "Specific advice and insights related to health and well-being, limited to a maximum of five lines."
+        }
+      },
+      required: ["relationships", "finance", "health"]
+    };
 
   try {
     const response = await ai.models.generateContent({
@@ -168,32 +197,11 @@ export const interpretSpread = async (cards: TarotCard[], spreadName: string, la
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            general: {
-              type: Type.STRING,
-              description: "A holistic, general interpretation of the entire spread, limited to a maximum of five lines."
-            },
-            relationships: {
-              type: Type.STRING,
-              description: "Specific advice and insights related to relationships, limited to a maximum of five lines."
-            },
-            finance: {
-              type: Type.STRING,
-              description: "Specific advice and insights related to finance and career, limited to a maximum of five lines."
-            },
-            health: {
-              type: Type.STRING,
-              description: "Specific advice and insights related to health and well-being, limited to a maximum of five lines."
-            }
-          },
-          required: ["general", "relationships", "finance", "health"]
-        },
+        responseSchema: responseSchema,
       },
     });
 
-    const jsonString = response.text;
+    const jsonString = sanitizeJsonResponse(response.text);
     const result: SpreadInterpretation = JSON.parse(jsonString);
     return result;
 

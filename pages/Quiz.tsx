@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
-import { analyzeTextAndPickCard, generateCardImage, QuizResult } from '../services/geminiService';
+import { analyzeTextAndPickCard, generateCardImage, QuizResult, generateSpeech } from '../services/geminiService';
 import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Card from '../components/Card';
 import ImageRenderer from '../components/ImageRenderer';
+import SpeakerIcon from '../components/SpeakerIcon';
+import { decode, decodeAudioData } from '../utils/audioUtils';
 
 const Quiz: React.FC = () => {
   const { t, language } = useTranslations();
@@ -16,6 +18,67 @@ const Quiz: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [audioState, setAudioState] = useState<'idle' | 'generating' | 'playing'>('idle');
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferCache = useRef<AudioBuffer | null>(null);
+
+  useEffect(() => {
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return () => {
+        audioSourceRef.current?.stop();
+    };
+  }, []);
+
+  const handleSpeak = async () => {
+    if (!result || !result.portrait) return;
+
+    if (audioState === 'playing') {
+        audioSourceRef.current?.stop();
+        setAudioState('idle');
+        return;
+    }
+
+    if (audioState === 'generating') return;
+
+    const audioCtx = audioContextRef.current;
+    if (!audioCtx) return;
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    try {
+        let bufferToPlay: AudioBuffer;
+
+        if (audioBufferCache.current) {
+            bufferToPlay = audioBufferCache.current;
+        } else {
+            setAudioState('generating');
+            const base64Audio = await generateSpeech(result.portrait);
+            const rawAudio = decode(base64Audio);
+            const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+            audioBufferCache.current = decodedBuffer;
+            bufferToPlay = decodedBuffer;
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = bufferToPlay;
+        source.connect(audioCtx.destination);
+        source.onended = () => {
+            setAudioState('idle');
+            audioSourceRef.current = null;
+        };
+        source.start(0);
+        audioSourceRef.current = source;
+        setAudioState('playing');
+
+    } catch (error) {
+        console.error("Failed to play audio:", error);
+        setAudioState('idle');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
@@ -25,6 +88,11 @@ const Quiz: React.FC = () => {
     setResult(null);
     setMatchedCard(null);
     setGeneratedImageUrl(null);
+    
+    // Stop any ongoing audio and clear cache
+    audioSourceRef.current?.stop();
+    setAudioState('idle');
+    audioBufferCache.current = null;
 
     try {
       const analysisResult = await analyzeTextAndPickCard(userInput, language);
@@ -100,7 +168,17 @@ const Quiz: React.FC = () => {
             </div>
             
             <div className="md:col-span-2">
-                <h3 className="text-2xl font-serif text-yellow-400 mt-8 mb-4">{t('quizYourPortrait')}</h3>
+                <h3 className="text-2xl font-serif text-yellow-400 mt-8 mb-4 flex items-center gap-4">
+                  {t('quizYourPortrait')}
+                   <button 
+                      onClick={handleSpeak}
+                      aria-label={t('playAudio')}
+                      disabled={audioState === 'generating'}
+                      className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
+                  >
+                      {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
+                  </button>
+                </h3>
                 <div className="p-6 bg-purple-900/30 rounded-lg border border-purple-700">
                     <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{result.portrait}</p>
                 </div>
