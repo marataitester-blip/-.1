@@ -1,26 +1,41 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import tarotDeck from '../constants/deck';
 import { useTranslations } from '../hooks/useTranslations';
 import SpeakerIcon from '../components/SpeakerIcon';
 import ImageRenderer from '../components/ImageRenderer';
-import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { language, t } = useTranslations();
-  const { play, isPlaying, isLoading, activeId } = useAudioPlayer();
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const card = tarotDeck.find(c => c.id === Number(id));
+
+  useEffect(() => {
+    // Cleanup speechSynthesis on component unmount or card change
+    return () => {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    };
+  }, [id]);
 
   if (!card) {
     return <div>Card not found.</div>;
   }
   
   const handleSpeak = () => {
-    if (card) {
-      play(card.longDescription[language], card.id);
+    if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        return;
     }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
+    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
   };
 
   const relatedCards = tarotDeck.filter(c => c.id !== card.id).sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -44,13 +59,9 @@ const CardDetail: React.FC = () => {
                         <button 
                             onClick={handleSpeak}
                             aria-label={t('playAudio')}
-                            className="p-3 rounded-full bg-purple-900/50 hover:bg-purple-800 inline-flex items-center justify-center disabled:opacity-50"
-                            disabled={isLoading && activeId === card.id}
+                            className="p-3 rounded-full bg-purple-900/50 hover:bg-purple-800 inline-flex items-center justify-center"
                         >
-                            <SpeakerIcon 
-                                isSpeaking={isPlaying && activeId === card.id}
-                                isLoading={isLoading && activeId === card.id}
-                             />
+                            <SpeakerIcon isSpeaking={isSpeaking} />
                         </button>
                     </div>
                 </div>

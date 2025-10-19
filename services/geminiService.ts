@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import tarotDeck from "../constants/deck";
 import { TarotCard } from "../types";
 
@@ -171,36 +170,4 @@ export const interpretSpread = async (cards: TarotCard[], spreadName: string, la
     console.error("Error interpreting spread with Gemini:", error);
     throw new Error("Failed to interpret the spread.");
   }
-};
-
-export const generateSpeech = async (text: string, lang: 'en' | 'ru'): Promise<string> => {
-    const model = 'gemini-2.5-flash-preview-tts';
-    const prompt = `Say with a calm and mystical voice: ${text}`;
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: model,
-            contents: [{ parts: [{ text: prompt }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: {
-                      // Using 'Kore' as it supports both English and Russian well.
-                      prebuiltVoiceConfig: { voiceName: 'Kore' },
-                    },
-                },
-            },
-        });
-        
-        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!base64Audio) {
-            throw new Error("No audio data received from API.");
-        }
-        
-        return base64Audio;
-
-    } catch (error) {
-        console.error("Error generating speech with Gemini:", error);
-        throw new Error("Failed to generate speech.");
-    }
 };

@@ -1,17 +1,21 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
 import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import SpeakerIcon from '../components/SpeakerIcon';
 import ImageRenderer from '../components/ImageRenderer';
-import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 const Encyclopedia: React.FC = () => {
   const { t, language } = useTranslations();
   const [searchTerm, setSearchTerm] = useState('');
-  const { play, isPlaying, isLoading, activeId } = useAudioPlayer();
+  const [speakingCardId, setSpeakingCardId] = useState<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   const filteredDeck = useMemo(() => {
     if (!searchTerm) {
@@ -25,7 +29,20 @@ const Encyclopedia: React.FC = () => {
   const handleSpeak = (e: React.MouseEvent, card: TarotCard) => {
     e.preventDefault();
     e.stopPropagation();
-    play(card.longDescription[language], card.id);
+
+    if (speakingCardId === card.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingCardId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
+    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+    utterance.onend = () => setSpeakingCardId(null);
+    utterance.onerror = () => setSpeakingCardId(null);
+    setSpeakingCardId(card.id);
+    window.speechSynthesis.speak(utterance);
   };
 
 
@@ -58,13 +75,9 @@ const Encyclopedia: React.FC = () => {
                     <button
                       onClick={(e) => handleSpeak(e, card)}
                       aria-label={t('playAudio')}
-                      className="mt-2 p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
-                      disabled={isLoading && activeId === card.id}
+                      className="mt-2 p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
                     >
-                      <SpeakerIcon 
-                        isSpeaking={isPlaying && activeId === card.id} 
-                        isLoading={isLoading && activeId === card.id} 
-                      />
+                      <SpeakerIcon isSpeaking={speakingCardId === card.id} />
                     </button>
                 </div>
             </div>
