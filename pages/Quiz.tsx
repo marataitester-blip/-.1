@@ -79,6 +79,21 @@ const Quiz: React.FC = () => {
     }
   };
 
+  const handleSaveImage = () => {
+    if (!generatedImageUrl || !result) return;
+
+    const cardName = result.cardName.replace(/ /g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    const fileName = `astral-hero-${cardName.toLowerCase()}.jpeg`;
+
+    const link = document.createElement('a');
+    link.href = generatedImageUrl;
+    link.download = fileName;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
@@ -159,7 +174,15 @@ const Quiz: React.FC = () => {
             <div className="flex flex-col items-center">
                 <h3 className="text-2xl font-serif text-yellow-400 mb-4">{t('quizYourImage')}</h3>
                 {generatedImageUrl ? (
+                  <>
                     <ImageRenderer src={generatedImageUrl} alt={`AI generated ${result.cardName}`} className="rounded-xl shadow-2xl shadow-purple-900/60 w-64 h-[426px] md:w-72 md:h-[480px]" />
+                    <button
+                      onClick={handleSaveImage}
+                      className="mt-6 inline-block bg-purple-600 text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-purple-500 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-purple-500/20"
+                    >
+                      {t('saveCard')}
+                    </button>
+                  </>
                 ) : (
                     <div className="w-64 h-[426px] md:w-72 md:h-[480px] bg-purple-900/50 rounded-xl flex items-center justify-center">
                         <LoadingSpinner />

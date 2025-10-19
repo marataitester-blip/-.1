@@ -72,6 +72,7 @@ export const translations = {
     feedbackCancelButton: "Cancel",
     feedbackSubmitReplyButton: "Submit Reply",
     feedbackReplyPlaceholder: "Write a reply...",
+    saveCard: "Save Card",
   },
   ru: {
     navHome: "Главная",
@@ -146,5 +147,6 @@ export const translations = {
     feedbackCancelButton: "Отмена",
     feedbackSubmitReplyButton: "Отправить ответ",
     feedbackReplyPlaceholder: "Напишите ответ...",
+    saveCard: "Сохранить Карту",
   },
 };
