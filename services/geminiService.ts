@@ -1,12 +1,10 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import tarotDeck from "../constants/deck";
 import { TarotCard } from "../types";
 
 // The API key is read from the environment variable process.env.API_KEY.
 // In this project's setup, it's provided by the execution environment, and we assume it's always available.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-
-const cardNames = tarotDeck.map(card => card.name.en).join(', ');
 
 export interface QuizResult {
   cardName: string;
@@ -22,6 +20,9 @@ export interface SpreadInterpretation {
 
 export const analyzeTextAndPickCard = async (userInput: string, lang: 'en' | 'ru'): Promise<QuizResult> => {
   const model = 'gemini-2.5-flash';
+  
+  // Fix: Define `cardNames` from the imported `tarotDeck` to be used in the prompt.
+  const cardNames = tarotDeck.map(card => card.name.en).join(', ');
   
   const prompt = `
     Analyze the following text from a user. Based on their words, feelings, and the overall narrative, choose the ONE Tarot card that best represents their current state or situation from this list: [${cardNames}].
@@ -110,6 +111,36 @@ export const generateCardImage = async (cardName: string, portrait: string): Pro
         throw new Error("Failed to generate card image.");
     }
 };
+
+export const generateSpeech = async (text: string): Promise<string> => {
+  const model = "gemini-2.5-flash-preview-tts";
+  try {
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: [{ parts: [{ text: text }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            // Using a voice that sounds dramatic and male, as requested.
+            prebuiltVoiceConfig: { voiceName: 'Fenrir' },
+          },
+        },
+      },
+    });
+    
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+      throw new Error("No audio data received from API.");
+    }
+    return base64Audio;
+
+  } catch (error) {
+    console.error("Error generating speech with Gemini:", error);
+    throw new Error("Failed to generate speech.");
+  }
+};
+
 
 export const interpretSpread = async (cards: TarotCard[], spreadName: string, lang: 'en' | 'ru'): Promise<SpreadInterpretation> => {
   const model = 'gemini-2.5-flash';

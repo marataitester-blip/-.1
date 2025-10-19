@@ -1,57 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
 import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import Card from '../components/Card';
 import SpeakerIcon from '../components/SpeakerIcon';
+import { generateSpeech } from '../services/geminiService';
+import { decode, decodeAudioData } from '../utils/audioUtils';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Home: React.FC = () => {
   const { t, language } = useTranslations();
   const [cardOfDay, setCardOfDay] = useState<TarotCard | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioState, setAudioState] = useState<'idle' | 'generating' | 'playing'>('idle');
+  
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferCache = useRef<AudioBuffer | null>(null);
 
   useEffect(() => {
     const getCardOfDay = () => {
       const today = new Date();
-      // Create a seed based on the date (YYYYMMDD) to ensure the same card is shown for the whole day.
       const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-      
-      // Simple pseudo-random number based on the seed.
       const random = Math.sin(seed) * 10000;
       const pseudoRandomValue = random - Math.floor(random);
-      
       const randomIndex = Math.floor(pseudoRandomValue * tarotDeck.length);
       const dailyCard = tarotDeck[randomIndex];
       setCardOfDay(dailyCard);
     };
-
     getCardOfDay();
   }, []);
 
   useEffect(() => {
+    // Lazy-initialize AudioContext
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    // Cleanup on unmount
     return () => {
-      window.speechSynthesis.cancel();
+      audioSourceRef.current?.stop();
     };
   }, []);
-
-  const handleSpeak = (e: React.MouseEvent, card: TarotCard) => {
+  
+  const handleSpeak = async (e: React.MouseEvent, card: TarotCard) => {
     e.preventDefault();
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+
+    if (audioState === 'playing') {
+      audioSourceRef.current?.stop();
+      setAudioState('idle');
       return;
     }
+    
+    if (audioState === 'generating') return;
+    
+    const audioCtx = audioContextRef.current;
+    if (!audioCtx) return;
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    
+    try {
+      let bufferToPlay: AudioBuffer;
+
+      if (audioBufferCache.current) {
+        bufferToPlay = audioBufferCache.current;
+      } else {
+        setAudioState('generating');
+        const audioText = card.longDescription[language];
+        const base64Audio = await generateSpeech(audioText);
+        const rawAudio = decode(base64Audio);
+        const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+        audioBufferCache.current = decodedBuffer;
+        bufferToPlay = decodedBuffer;
+      }
+      
+      const source = audioCtx.createBufferSource();
+      source.buffer = bufferToPlay;
+      source.connect(audioCtx.destination);
+      source.onended = () => {
+          setAudioState('idle');
+          audioSourceRef.current = null;
+      };
+      source.start(0);
+      audioSourceRef.current = source;
+      setAudioState('playing');
+
+    } catch (error) {
+      console.error("Failed to play audio:", error);
+      setAudioState('idle');
+    }
   };
-
 
   return (
     <div className="text-center py-8 md:py-16">
@@ -86,9 +123,10 @@ const Home: React.FC = () => {
                             <button 
                                 onClick={(e) => handleSpeak(e, cardOfDay)}
                                 aria-label={t('playAudio')}
-                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                                disabled={audioState === 'generating'}
+                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
                             >
-                                <SpeakerIcon isSpeaking={isSpeaking} />
+                                {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
                             </button>
                         </div>
                     </div>

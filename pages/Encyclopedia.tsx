@@ -1,19 +1,30 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
 import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import SpeakerIcon from '../components/SpeakerIcon';
 import ImageRenderer from '../components/ImageRenderer';
+import { generateSpeech } from '../services/geminiService';
+import { decode, decodeAudioData } from '../utils/audioUtils';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Encyclopedia: React.FC = () => {
   const { t, language } = useTranslations();
   const [searchTerm, setSearchTerm] = useState('');
-  const [speakingCardId, setSpeakingCardId] = useState<number | null>(null);
+  const [audioStatus, setAudioStatus] = useState<{ id: number | null, status: 'idle' | 'generating' | 'playing' }>({ id: null, status: 'idle' });
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferCache = useRef<Map<number, AudioBuffer>>(new Map());
 
   useEffect(() => {
+    // Lazy-initialize AudioContext
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
     return () => {
-      window.speechSynthesis.cancel();
+      audioSourceRef.current?.stop();
     };
   }, []);
 
@@ -26,23 +37,58 @@ const Encyclopedia: React.FC = () => {
     );
   }, [searchTerm, language]);
 
-  const handleSpeak = (e: React.MouseEvent, card: TarotCard) => {
+  const handleSpeak = async (e: React.MouseEvent, card: TarotCard) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (speakingCardId === card.id) {
-      window.speechSynthesis.cancel();
-      setSpeakingCardId(null);
+    const audioCtx = audioContextRef.current;
+    if (!audioCtx) return;
+
+    if (audioStatus.id === card.id && audioStatus.status === 'playing') {
+      audioSourceRef.current?.stop();
+      setAudioStatus({ id: null, status: 'idle' });
       return;
     }
+    
+    if (audioStatus.status === 'generating') return;
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onend = () => setSpeakingCardId(null);
-    utterance.onerror = () => setSpeakingCardId(null);
-    setSpeakingCardId(card.id);
-    window.speechSynthesis.speak(utterance);
+    if (audioSourceRef.current) {
+        audioSourceRef.current.stop();
+    }
+    
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    
+    try {
+        let bufferToPlay: AudioBuffer;
+        const cachedBuffer = audioBufferCache.current.get(card.id);
+
+        if (cachedBuffer) {
+            bufferToPlay = cachedBuffer;
+        } else {
+            setAudioStatus({ id: card.id, status: 'generating' });
+            const audioText = card.longDescription[language];
+            const base64Audio = await generateSpeech(audioText);
+            const rawAudio = decode(base64Audio);
+            const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+            audioBufferCache.current.set(card.id, decodedBuffer);
+            bufferToPlay = decodedBuffer;
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = bufferToPlay;
+        source.connect(audioCtx.destination);
+        source.onended = () => {
+            setAudioStatus(prev => prev.id === card.id ? { id: null, status: 'idle' } : prev);
+            audioSourceRef.current = null;
+        };
+        source.start(0);
+        audioSourceRef.current = source;
+        setAudioStatus({ id: card.id, status: 'playing' });
+
+    } catch (error) {
+        console.error("Failed to play audio for card " + card.id, error);
+        setAudioStatus({ id: null, status: 'idle' });
+    }
   };
 
 
@@ -75,9 +121,13 @@ const Encyclopedia: React.FC = () => {
                     <button
                       onClick={(e) => handleSpeak(e, card)}
                       aria-label={t('playAudio')}
-                      className="mt-2 p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                      disabled={audioStatus.status === 'generating' && audioStatus.id !== card.id}
+                      className="mt-2 p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <SpeakerIcon isSpeaking={speakingCardId === card.id} />
+                      {audioStatus.id === card.id && audioStatus.status === 'generating' 
+                          ? <LoadingSpinner size="small" /> 
+                          : <SpeakerIcon isSpeaking={audioStatus.id === card.id && audioStatus.status === 'playing'} />
+                      }
                     </button>
                 </div>
             </div>

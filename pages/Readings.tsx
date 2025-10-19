@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 import tarotDeck from '../constants/deck';
 import { TarotCard } from '../types';
 import Card from '../components/Card';
 import SpeakerIcon from '../components/SpeakerIcon';
-import { interpretSpread, SpreadInterpretation } from '../services/geminiService';
+import { interpretSpread, SpreadInterpretation, generateSpeech } from '../services/geminiService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { decode, decodeAudioData } from '../utils/audioUtils';
 
 type SpreadType = 'day' | 'three' | 'hero';
 
@@ -30,15 +31,22 @@ const Readings: React.FC = () => {
   const [activeSpread, setActiveSpread] = useState<SpreadType | null>(null);
   const [drawnCards, setDrawnCards] = useState<(TarotCard | null)[]>([]);
   const [areCardsFlipped, setAreCardsFlipped] = useState(false);
-  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [spreadInterpretation, setSpreadInterpretation] = useState<SpreadInterpretation | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [audioStatus, setAudioStatus] = useState<{ index: number | null, status: 'idle' | 'generating' | 'playing' }>({ index: null, status: 'idle' });
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferCache = useRef<Map<number, AudioBuffer>>(new Map());
 
   useEffect(() => {
-    // Cleanup speechSynthesis on component unmount
+    // Lazy-initialize AudioContext
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
     return () => {
-      window.speechSynthesis.cancel();
+      audioSourceRef.current?.stop();
     };
   }, []);
   
@@ -65,26 +73,60 @@ const Readings: React.FC = () => {
     generateInterpretation();
   }, [areCardsFlipped, activeSpread, language, drawnCards, t]);
 
+  const handleSpeak = async (card: TarotCard, index: number) => {
+    const audioCtx = audioContextRef.current;
+    if (!audioCtx) return;
 
-  const handleSpeak = (text: string, index: number) => {
-    if (speakingIndex === index) {
-        window.speechSynthesis.cancel();
-        setSpeakingIndex(null);
-        return;
+    if (audioStatus.index === index && audioStatus.status === 'playing') {
+      audioSourceRef.current?.stop();
+      setAudioStatus({ index: null, status: 'idle' });
+      return;
     }
+    
+    if (audioStatus.status === 'generating') return;
 
-    window.speechSynthesis.cancel(); // Stop any previous speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onend = () => setSpeakingIndex(null);
-    utterance.onerror = () => setSpeakingIndex(null);
-    setSpeakingIndex(index);
-    window.speechSynthesis.speak(utterance);
+    if (audioSourceRef.current) {
+        audioSourceRef.current.stop();
+    }
+    
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    
+    try {
+        let bufferToPlay: AudioBuffer;
+        const cachedBuffer = audioBufferCache.current.get(card.id);
+
+        if (cachedBuffer) {
+            bufferToPlay = cachedBuffer;
+        } else {
+            setAudioStatus({ index: index, status: 'generating' });
+            const audioText = card.longDescription[language];
+            const base64Audio = await generateSpeech(audioText);
+            const rawAudio = decode(base64Audio);
+            const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+            audioBufferCache.current.set(card.id, decodedBuffer);
+            bufferToPlay = decodedBuffer;
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = bufferToPlay;
+        source.connect(audioCtx.destination);
+        source.onended = () => {
+            setAudioStatus(prev => prev.index === index ? { index: null, status: 'idle' } : prev);
+            audioSourceRef.current = null;
+        };
+        source.start(0);
+        audioSourceRef.current = source;
+        setAudioStatus({ index: index, status: 'playing' });
+
+    } catch (error) {
+        console.error("Failed to play audio for card at index " + index, error);
+        setAudioStatus({ index: null, status: 'idle' });
+    }
   };
 
   const handleDrawCards = (spread: SpreadType) => {
-    window.speechSynthesis.cancel();
-    setSpeakingIndex(null);
+    audioSourceRef.current?.stop();
+    setAudioStatus({ index: null, status: 'idle' });
     setActiveSpread(spread);
     setAreCardsFlipped(false);
     setSpreadInterpretation(null);
@@ -124,12 +166,16 @@ const Readings: React.FC = () => {
                {areCardsFlipped && card && (
                 <div className="max-w-xs text-center p-4 bg-black/20 rounded-lg space-y-3">
                     <p className="text-gray-300 text-sm">{card.longDescription[language]}</p>
-                    <button 
-                        onClick={() => handleSpeak(card.longDescription[language], index)}
+                     <button 
+                        onClick={() => handleSpeak(card, index)}
                         aria-label={t('playAudio')}
-                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800"
+                        disabled={audioStatus.status === 'generating' && audioStatus.index !== index}
+                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
                     >
-                        <SpeakerIcon isSpeaking={speakingIndex === index} />
+                        {audioStatus.index === index && audioStatus.status === 'generating' 
+                            ? <LoadingSpinner size="small" /> 
+                            : <SpeakerIcon isSpeaking={audioStatus.index === index && audioStatus.status === 'playing'} />
+                        }
                     </button>
                 </div>
                )}

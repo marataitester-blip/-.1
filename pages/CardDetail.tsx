@@ -1,21 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import tarotDeck from '../constants/deck';
 import { useTranslations } from '../hooks/useTranslations';
 import SpeakerIcon from '../components/SpeakerIcon';
 import ImageRenderer from '../components/ImageRenderer';
+import { generateSpeech } from '../services/geminiService';
+import { decode, decodeAudioData } from '../utils/audioUtils';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { language, t } = useTranslations();
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const card = tarotDeck.find(c => c.id === Number(id));
+  
+  const [audioState, setAudioState] = useState<'idle' | 'generating' | 'playing'>('idle');
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferCache = useRef<AudioBuffer | null>(null);
 
   useEffect(() => {
-    // Cleanup speechSynthesis on component unmount or card change
+    // Lazy-initialize AudioContext
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+
+    // Cleanup on unmount or when card (id) changes
     return () => {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      audioSourceRef.current?.stop();
+      setAudioState('idle');
+      audioBufferCache.current = null; // Clear cache for the new card
     };
   }, [id]);
 
@@ -23,19 +36,50 @@ const CardDetail: React.FC = () => {
     return <div>Card not found.</div>;
   }
   
-  const handleSpeak = () => {
-    if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-        return;
+  const handleSpeak = async () => {
+    if (audioState === 'playing') {
+      audioSourceRef.current?.stop();
+      setAudioState('idle');
+      return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.longDescription[language]);
-    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+    
+    if (audioState === 'generating') return;
+    
+    const audioCtx = audioContextRef.current;
+    if (!audioCtx) return;
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    
+    try {
+      let bufferToPlay: AudioBuffer;
+
+      if (audioBufferCache.current) {
+        bufferToPlay = audioBufferCache.current;
+      } else {
+        setAudioState('generating');
+        const audioText = card.longDescription[language];
+        const base64Audio = await generateSpeech(audioText);
+        const rawAudio = decode(base64Audio);
+        const decodedBuffer = await decodeAudioData(rawAudio, audioCtx);
+        audioBufferCache.current = decodedBuffer;
+        bufferToPlay = decodedBuffer;
+      }
+      
+      const source = audioCtx.createBufferSource();
+      source.buffer = bufferToPlay;
+      source.connect(audioCtx.destination);
+      source.onended = () => {
+          setAudioState('idle');
+          audioSourceRef.current = null;
+      };
+      source.start(0);
+      audioSourceRef.current = source;
+      setAudioState('playing');
+
+    } catch (error) {
+      console.error("Failed to play audio:", error);
+      setAudioState('idle');
+    }
   };
 
   const relatedCards = tarotDeck.filter(c => c.id !== card.id).sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -59,9 +103,10 @@ const CardDetail: React.FC = () => {
                         <button 
                             onClick={handleSpeak}
                             aria-label={t('playAudio')}
-                            className="p-3 rounded-full bg-purple-900/50 hover:bg-purple-800 inline-flex items-center justify-center"
+                            disabled={audioState === 'generating'}
+                            className="p-3 rounded-full bg-purple-900/50 hover:bg-purple-800 inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-wait"
                         >
-                            <SpeakerIcon isSpeaking={isSpeaking} />
+                            {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
                         </button>
                     </div>
                 </div>
