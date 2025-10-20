@@ -29,7 +29,7 @@ const Shop: React.FC = () => {
              <div className="mt-16">
                 <h3 className="text-2xl font-serif text-yellow-400">{t('contactTitle')}</h3>
                 <p className="mt-2 text-gray-400">{t('contactEmail')} <a href="mailto:contact@herosjourneytarot.com" className="text-yellow-300 hover:underline">contact@herosjourneytarot.com</a></p>
-                <p className="mt-1 text-gray-400">{t('contactTelegram')} <a href="#" onClick={(e) => e.preventDefault()} className="text-yellow-300 hover:underline">Astral Hero Community</a></p>
+                <p className="mt-1 text-gray-400">{t('contactTelegram')} <a href="https://t.me/+y7Inf371g7w0NzMy" target="_blank" rel="noopener noreferrer" className="text-yellow-300 hover:underline">Astral Hero Community</a></p>
              </div>
         </div>
     );
