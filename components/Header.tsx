@@ -40,24 +40,31 @@ const Header: React.FC = () => {
           </nav>
 
           <div className="flex items-center">
-             <div className="bg-purple-900/50 rounded-full border border-purple-700">
+            {/* Swapped order: Language switcher is first, with margin for desktop view */}
+            <div className="bg-purple-900/50 rounded-full border border-purple-700 md:ml-6">
                 <button
                     onClick={() => setLanguage('en')}
-                    className={`px-3 py-1 text-sm rounded-full transition-colors duration-300 ${language === 'en' ? 'bg-yellow-400 text-purple-900' : 'text-gray-300'}`}
+                    className={`px-2 py-0.5 text-xs md:px-3 md:py-1 md:text-sm rounded-full transition-colors duration-300 ${language === 'en' ? 'bg-yellow-400 text-purple-900' : 'text-gray-300'}`}
                 >
                     EN
                 </button>
                 <button
                     onClick={() => setLanguage('ru')}
-                    className={`px-3 py-1 text-sm rounded-full transition-colors duration-300 ${language === 'ru' ? 'bg-yellow-400 text-purple-900' : 'text-gray-300'}`}
+                    className={`px-2 py-0.5 text-xs md:px-3 md:py-1 md:text-sm rounded-full transition-colors duration-300 ${language === 'ru' ? 'bg-yellow-400 text-purple-900' : 'text-gray-300'}`}
                 >
                     RU
                 </button>
             </div>
+            {/* Site Map button, styled like language switcher and now second (mobile only) */}
             <div className="md:hidden ml-4">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-300 hover:text-white">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                </button>
+              <div className="bg-purple-900/50 rounded-full border border-purple-700 hover:border-yellow-400/80 transition-colors duration-300">
+                  <button
+                      onClick={() => setIsMenuOpen(!isMenuOpen)}
+                      className="px-3 py-1 text-sm font-semibold text-gray-300 rounded-full hover:text-yellow-300 transition-colors duration-300 whitespace-nowrap"
+                  >
+                      {t('navSiteMap')}
+                  </button>
+              </div>
             </div>
           </div>
         </div>
