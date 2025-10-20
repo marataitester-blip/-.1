@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 
@@ -6,8 +7,10 @@ const Blog: React.FC = () => {
     const { t } = useTranslations();
     return (
         <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300 text-center">{t('blogTitle')}</h1>
-            <p className="mt-4 text-lg text-gray-300 text-center">A story unfolds, one chapter at a time.</p>
+            {/* FIX: Use correct translation key 'aboutBlogTitle' instead of 'blogTitle'. */}
+            <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300 text-center">{t('aboutBlogTitle')}</h1>
+            {/* FIX: Use correct translation key 'aboutBlogSubtitle' instead of 'blogSubtitle'. */}
+            <p className="mt-4 text-lg text-gray-300 text-center">{t('aboutBlogSubtitle')}</p>
             <div className="mt-12 space-y-12">
                 <div className="p-6 bg-purple-900/30 rounded-lg border border-purple-700">
                     <h2 className="text-3xl font-serif text-yellow-400">Chapter 1: The Neon Hermit</h2>

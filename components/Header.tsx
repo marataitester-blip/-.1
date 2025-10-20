@@ -11,7 +11,7 @@ const Header: React.FC = () => {
     { path: '/about', label: t('navAbout') },
     { path: '/encyclopedia', label: t('navEncyclopedia') },
     { path: '/quiz', label: t('navQuiz') },
-    { path: '/blog', label: t('navBlog') },
+    { path: '/community', label: t('navCommunity') },
     { path: '/shop', label: t('navShop') },
     { path: '/feedback', label: t('navFeedback') },
   ];
