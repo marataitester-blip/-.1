@@ -11,6 +11,7 @@ import About from './pages/About';
 import Shop from './pages/Shop';
 import Feedback from './pages/Feedback';
 import Community from './pages/Community';
+import Chat from './pages/Chat';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
@@ -29,6 +30,7 @@ const App: React.FC = () => {
               <Route path="/quiz" element={<Quiz />} />
               <Route path="/community" element={<Community />} />
               <Route path="/about" element={<About />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/feedback" element={<Feedback />} />
             </Routes>
