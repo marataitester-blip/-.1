@@ -4,6 +4,10 @@ export interface TarotCard {
     en: string;
     ru: string;
   };
+  keyword: {
+    en: string;
+    ru: string;
+  };
   imageUrl: string;
   description: { // Short description for previews
       en: string;

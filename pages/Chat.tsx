@@ -63,23 +63,23 @@ const ChatPage: React.FC = () => {
     return (
         <div className="max-w-3xl mx-auto flex flex-col h-[75vh]">
             <div className="text-center mb-6">
-                <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300">{t('chatTitle')}</h1>
+                <h1 className="text-4xl md:text-5xl font-bold font-serif">{t('chatTitle')}</h1>
             </div>
 
-            <div ref={chatContainerRef} className="flex-grow p-4 bg-purple-900/30 rounded-lg border border-purple-700 overflow-y-auto mb-4">
+            <div ref={chatContainerRef} className="flex-grow p-4 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20 overflow-y-auto mb-4">
                 <div className="space-y-4">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.role === 'model' && <span className="w-8 h-8 rounded-full bg-yellow-400 text-purple-900 flex items-center justify-center font-bold text-sm flex-shrink-0">M</span>}
-                            <div className={`max-w-md p-3 rounded-xl ${msg.role === 'user' ? 'bg-yellow-400 text-purple-900' : 'bg-purple-800 text-gray-200'}`}>
+                            {msg.role === 'model' && <span className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--bg)] flex items-center justify-center font-bold text-sm flex-shrink-0">M</span>}
+                            <div className={`max-w-md p-3 rounded-xl ${msg.role === 'user' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-black/30 text-[var(--fg)]'}`}>
                                 <p className="whitespace-pre-wrap">{msg.text}</p>
                             </div>
                         </div>
                     ))}
                     {isLoading && (
                          <div className="flex items-end gap-2 justify-start">
-                            <span className="w-8 h-8 rounded-full bg-yellow-400 text-purple-900 flex items-center justify-center font-bold text-sm flex-shrink-0">M</span>
-                            <div className="max-w-md p-3 rounded-xl bg-purple-800 text-gray-200">
+                            <span className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--bg)] flex items-center justify-center font-bold text-sm flex-shrink-0">M</span>
+                            <div className="max-w-md p-3 rounded-xl bg-black/30 text-[var(--fg)]">
                                 <LoadingSpinner size="small" />
                             </div>
                         </div>
@@ -87,7 +87,7 @@ const ChatPage: React.FC = () => {
                 </div>
             </div>
              
-             <div className="text-center text-xs text-gray-400 mb-4 px-4">
+             <div className="text-center text-xs text-[var(--muted)] mb-4 px-4">
                 {t('chatDisclaimer')}
             </div>
 
@@ -100,13 +100,13 @@ const ChatPage: React.FC = () => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder={t('chatPlaceholder')}
-                    className="flex-grow px-4 py-2 bg-purple-800/50 border border-purple-600 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="flex-grow px-4 py-2 bg-black/30 border border-[var(--accent)]/30 rounded-full text-white placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                     disabled={isLoading}
                 />
                 <button
                     onClick={handleSend}
                     disabled={isLoading || !input.trim()}
-                    className="bg-yellow-400 text-purple-900 font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[var(--accent)] text-[var(--bg)] font-bold py-2 px-6 rounded-full hover:bg-[#d8b88c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {t('chatSend')}
                 </button>

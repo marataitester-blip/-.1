@@ -91,20 +91,20 @@ const CardDetail: React.FC = () => {
                  <ImageRenderer 
                     src={card.imageUrl} 
                     alt={card.name[language]} 
-                    className="rounded-xl shadow-2xl shadow-purple-900/60 max-w-sm w-full aspect-[3/5]"
+                    className="rounded-xl shadow-2xl shadow-black/60 max-w-sm w-full aspect-[3/5]"
                 />
             </div>
             <div className="md:col-span-2">
-                <h1 className="text-4xl md:text-6xl font-serif font-bold text-yellow-300">{card.name[language]}</h1>
+                <h1 className="text-4xl md:text-6xl font-serif font-bold">{card.name[language]}</h1>
                 
-                <div className="mt-6 text-lg text-gray-300 leading-relaxed">
+                <div className="mt-6 text-lg text-[var(--muted)] leading-relaxed">
                     <p>{card.longDescription[language]}</p>
                     <div className="mt-6">
                         <button 
                             onClick={handleSpeak}
                             aria-label={t('playAudio')}
                             disabled={audioState === 'generating'}
-                            className="p-3 rounded-full bg-purple-900/50 hover:bg-purple-800 inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-wait"
+                            className="p-3 rounded-full bg-[var(--card-bg)] hover:bg-black/30 inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-wait"
                         >
                             {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
                         </button>
@@ -113,12 +113,12 @@ const CardDetail: React.FC = () => {
 
 
                 <div className="mt-12">
-                    <h3 className="text-2xl font-serif text-yellow-400">{t('relatedArcana')}</h3>
+                    <h3 className="text-2xl font-serif">{t('relatedArcana')}</h3>
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                         {relatedCards.map(relatedCard => (
                             <Link to={`/card/${relatedCard.id}`} key={relatedCard.id} className="group">
                                 <ImageRenderer src={relatedCard.imageUrl} alt={relatedCard.name[language]} className="aspect-[3/5] rounded-lg transition-transform duration-300 group-hover:scale-105 shadow-md"/>
-                                <p className="text-center mt-2 text-sm text-gray-300 group-hover:text-yellow-300">{relatedCard.name[language]}</p>
+                                <p className="text-center mt-2 text-sm text-[var(--muted)] group-hover:text-[var(--accent)]">{relatedCard.name[language]}</p>
                             </Link>
                         ))}
                     </div>

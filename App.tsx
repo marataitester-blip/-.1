@@ -19,7 +19,7 @@ const App: React.FC = () => {
   return (
     <LanguageProvider>
       <HashRouter>
-        <div className="flex flex-col min-h-screen bg-[#1a102c] text-gray-200">
+        <div className="flex flex-col min-h-screen bg-[var(--bg)] text-[var(--fg)]">
           <Header />
           <main className="flex-grow container mx-auto px-4 py-8">
             <Routes>

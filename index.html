@@ -8,13 +8,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+      :root {
+          --bg: #0f0f14; /* Deep, dark background */
+          --fg: #eae6df; /* Main text color */
+          --muted: #c9c3b8; /* Muted text */
+          --accent: #c7a87b; /* Gold accent */
+          --card-bg: #16161d; /* Card background */
+      }
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Cormorant Garamond', serif;
+        background-color: var(--bg);
+        color: var(--fg);
       }
       h1, h2, h3, h4, h5, h6, .font-serif {
-        font-family: 'Cormorant Garamond', serif;
+        font-family: 'Cinzel', serif;
+        color: var(--accent);
       }
     </style>
   <script type="importmap">

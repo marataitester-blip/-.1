@@ -94,18 +94,18 @@ const Home: React.FC = () => {
     <div className="text-center py-8 md:py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold font-serif leading-tight">
             {t('homeTitle')}
           </h1>
-          <p className="mt-4 text-lg text-gray-300 max-w-xl">
+          <p className="mt-4 text-lg text-[var(--muted)] max-w-xl">
             {t('homeSubtitle')}
           </p>
-          <div className="mt-8 p-6 bg-purple-900/30 rounded-lg border border-purple-700 max-w-xl">
-             <p className="text-gray-200 leading-relaxed">{t('homeDescription')}</p>
+          <div className="mt-8 p-6 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20 max-w-xl">
+             <p className="text-[var(--fg)] leading-relaxed">{t('homeDescription')}</p>
           </div>
           <Link
             to="/readings"
-            className="mt-10 inline-block bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full text-lg hover:bg-yellow-300 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/20"
+            className="mt-10 inline-block bg-[var(--accent)] text-[var(--bg)] font-bold py-3 px-8 rounded-full text-lg hover:bg-[#d8b88c] transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-[var(--accent)]/10"
           >
             {t('homeCTA')}
           </Link>
@@ -117,14 +117,14 @@ const Home: React.FC = () => {
                         <Card card={cardOfDay} size="large" />
                     </div>
                     <div className="mt-6 max-w-xs text-center p-4 bg-black/20 rounded-lg">
-                        <h3 className="text-2xl font-serif text-yellow-400 transition-colors duration-300 group-hover:text-yellow-200">{cardOfDay.name[language]}</h3>
-                        <p className="mt-2 text-gray-300">{cardOfDay.description[language]}</p>
+                        <h3 className="text-2xl font-serif text-[var(--accent)] transition-colors duration-300 group-hover:text-white">{cardOfDay.name[language]}</h3>
+                        <p className="mt-2 text-[var(--muted)]">{cardOfDay.description[language]}</p>
                         <div className="mt-4">
                             <button 
                                 onClick={(e) => handleSpeak(e, cardOfDay)}
                                 aria-label={t('playAudio')}
                                 disabled={audioState === 'generating'}
-                                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
+                                className="p-2 rounded-full bg-[var(--card-bg)] hover:bg-black/20 disabled:opacity-50 disabled:cursor-wait"
                             >
                                 {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
                             </button>

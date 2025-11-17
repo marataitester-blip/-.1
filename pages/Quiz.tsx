@@ -133,8 +133,8 @@ const Quiz: React.FC = () => {
 
   return (
     <div className="text-center max-w-4xl mx-auto">
-      <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300">{t('quizTitle')}</h1>
-      <p className="mt-4 text-lg text-gray-300">{t('quizSubtitle')}</p>
+      <h1 className="text-4xl md:text-5xl font-bold font-serif">{t('quizTitle')}</h1>
+      <p className="mt-4 text-lg text-[var(--muted)]">{t('quizSubtitle')}</p>
 
       <form onSubmit={handleSubmit} className="mt-10">
         <textarea
@@ -142,12 +142,12 @@ const Quiz: React.FC = () => {
           onChange={(e) => setUserInput(e.target.value)}
           placeholder={t('quizInputPlaceholder')}
           rows={8}
-          className="w-full p-4 bg-purple-900/50 border-2 border-purple-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-colors duration-300"
+          className="w-full p-4 bg-[var(--card-bg)] border-2 border-[var(--accent)]/30 rounded-lg text-[var(--fg)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors duration-300"
           disabled={isLoading}
         />
         <button
           type="submit"
-          className="mt-6 inline-block bg-yellow-400 text-purple-900 font-bold py-3 px-12 rounded-full text-lg hover:bg-yellow-300 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-6 inline-block bg-[var(--accent)] text-[var(--bg)] font-bold py-3 px-12 rounded-full text-lg hover:bg-[#d8b88c] transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-[var(--accent)]/10 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading || !userInput.trim()}
         >
           {isLoading ? t('generating') : t('quizSubmit')}
@@ -167,43 +167,43 @@ const Quiz: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             
             <div className="flex flex-col items-center">
-              <h3 className="text-2xl font-serif text-yellow-400 mb-4">{t('quizYourArcana')}</h3>
+              <h3 className="text-2xl font-serif mb-4">{t('quizYourArcana')}</h3>
               {matchedCard && <Card card={matchedCard} size="large" />}
             </div>
 
             <div className="flex flex-col items-center">
-                <h3 className="text-2xl font-serif text-yellow-400 mb-4">{t('quizYourImage')}</h3>
+                <h3 className="text-2xl font-serif mb-4">{t('quizYourImage')}</h3>
                 {generatedImageUrl ? (
                   <>
-                    <ImageRenderer src={generatedImageUrl} alt={`AI generated ${result.cardName}`} className="rounded-xl shadow-2xl shadow-purple-900/60 w-64 h-[426px] md:w-72 md:h-[480px]" />
+                    <ImageRenderer src={generatedImageUrl} alt={`AI generated ${result.cardName}`} className="rounded-xl shadow-2xl shadow-black/60 w-64 h-[426px] md:w-72 md:h-[480px]" />
                     <button
                       onClick={handleSaveImage}
-                      className="mt-6 inline-block bg-purple-600 text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-purple-500 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-purple-500/20"
+                      className="mt-6 inline-block bg-transparent border-2 border-[var(--accent)] text-[var(--accent)] font-bold py-3 px-8 rounded-full text-lg hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-all transform hover:scale-105 duration-300 shadow-lg shadow-[var(--accent)]/10"
                     >
                       {t('saveCard')}
                     </button>
                   </>
                 ) : (
-                    <div className="w-64 h-[426px] md:w-72 md:h-[480px] bg-purple-900/50 rounded-xl flex items-center justify-center">
+                    <div className="w-64 h-[426px] md:w-72 md:h-[480px] bg-[var(--card-bg)] rounded-xl flex items-center justify-center">
                         <LoadingSpinner />
                     </div>
                 )}
             </div>
             
             <div className="md:col-span-2">
-                <h3 className="text-2xl font-serif text-yellow-400 mt-8 mb-4 flex items-center gap-4">
+                <h3 className="text-2xl font-serif mt-8 mb-4 flex items-center gap-4">
                   {t('quizYourPortrait')}
                    <button 
                       onClick={handleSpeak}
                       aria-label={t('playAudio')}
                       disabled={audioState === 'generating'}
-                      className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
+                      className="p-2 rounded-full bg-[var(--card-bg)] hover:bg-black/20 disabled:opacity-50 disabled:cursor-wait"
                   >
                       {audioState === 'generating' ? <LoadingSpinner size="small" /> : <SpeakerIcon isSpeaking={audioState === 'playing'} />}
                   </button>
                 </h3>
-                <div className="p-6 bg-purple-900/30 rounded-lg border border-purple-700">
-                    <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{result.portrait}</p>
+                <div className="p-6 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20">
+                    <p className="text-[var(--fg)] leading-relaxed whitespace-pre-wrap">{result.portrait}</p>
                 </div>
             </div>
 

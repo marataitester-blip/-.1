@@ -220,13 +220,13 @@ const Readings: React.FC = () => {
   
   const renderInterpretationSection = (part: keyof SpreadInterpretation, title: string) => (
     <div>
-        <h3 className="text-2xl font-serif text-yellow-400 mb-2 flex items-center gap-4">
+        <h3 className="text-2xl font-serif text-[var(--accent)] mb-2 flex items-center gap-4">
             {title}
             <button
                 onClick={() => handleSpeakInterpretation(part)}
                 aria-label={`${t('playAudio')} for ${title}`}
                 disabled={(interpretationAudio.status === 'generating' && interpretationAudio.part !== part)}
-                className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50"
+                className="p-2 rounded-full bg-[var(--card-bg)] hover:bg-black/30 disabled:opacity-50"
             >
                 {interpretationAudio.part === part && interpretationAudio.status === 'generating'
                     ? <LoadingSpinner size="small" />
@@ -241,13 +241,13 @@ const Readings: React.FC = () => {
 
   return (
     <div className="text-center flex flex-col items-center">
-      <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300">{t('readingsTitle')}</h1>
-      <p className="mt-4 text-lg text-gray-300 max-w-2xl mx-auto">{t('readingsSubtitle')}</p>
+      <h1 className="text-4xl md:text-5xl font-bold font-serif">{t('readingsTitle')}</h1>
+      <p className="mt-4 text-lg text-[var(--muted)] max-w-2xl mx-auto">{t('readingsSubtitle')}</p>
 
       <div className="my-10 flex flex-wrap justify-center gap-4">
-        <button onClick={() => handleDrawCards('day')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'day' ? 'bg-yellow-400 text-purple-900' : 'bg-purple-800 hover:bg-purple-700'}`}>{t('cardOfDay')}</button>
-        <button onClick={() => handleDrawCards('three')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'three' ? 'bg-yellow-400 text-purple-900' : 'bg-purple-800 hover:bg-purple-700'}`}>{t('threeCards')}</button>
-        <button onClick={() => handleDrawCards('hero')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'hero' ? 'bg-yellow-400 text-purple-900' : 'bg-purple-800 hover:bg-purple-700'}`}>{t('heroPath')}</button>
+        <button onClick={() => handleDrawCards('day')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'day' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--card-bg)] hover:bg-black/20'}`}>{t('cardOfDay')}</button>
+        <button onClick={() => handleDrawCards('three')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'three' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--card-bg)] hover:bg-black/20'}`}>{t('threeCards')}</button>
+        <button onClick={() => handleDrawCards('hero')} className={`px-6 py-3 font-bold rounded-full transition duration-300 ${activeSpread === 'hero' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'bg-[var(--card-bg)] hover:bg-black/20'}`}>{t('heroPath')}</button>
       </div>
 
       {drawnCards.length > 0 && (
@@ -255,15 +255,15 @@ const Readings: React.FC = () => {
           {drawnCards.map((card, index) => (
             <div key={index} className="flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: `${index * 150}ms` }}>
               <Card card={card} isFlipped={areCardsFlipped} size={drawnCards.length > 3 ? 'small' : 'medium'} />
-              {spreadLabels[index] && <p className="text-yellow-400 font-serif text-lg">{spreadLabels[index]}</p>}
+              {spreadLabels[index] && <p className="text-[var(--accent)] font-serif text-lg">{spreadLabels[index]}</p>}
                {areCardsFlipped && card && (
                 <div className="max-w-xs text-center p-4 bg-black/20 rounded-lg space-y-3">
-                    <p className="text-gray-300 text-sm">{card.longDescription[language]}</p>
+                    <p className="text-[var(--muted)] text-sm">{card.longDescription[language]}</p>
                      <button 
                         onClick={() => handleSpeak(card, index)}
                         aria-label={t('playAudio')}
                         disabled={audioStatus.status === 'generating' && audioStatus.index !== index}
-                        className="p-2 rounded-full bg-purple-900/50 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-wait"
+                        className="p-2 rounded-full bg-[var(--card-bg)] hover:bg-black/20 disabled:opacity-50 disabled:cursor-wait"
                     >
                         {audioStatus.index === index && audioStatus.status === 'generating' 
                             ? <LoadingSpinner size="small" /> 
@@ -279,19 +279,19 @@ const Readings: React.FC = () => {
 
       {(isGenerating || spreadInterpretation || error) && (activeSpread === 'three' || activeSpread === 'hero') && (
         <div className="mt-16 w-full max-w-4xl mx-auto animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold font-serif text-yellow-300">{t('spreadInterpretation')}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold font-serif">{t('spreadInterpretation')}</h2>
           
           {isGenerating && (
             <div className="mt-8">
               <LoadingSpinner />
-              <p className="mt-4 text-gray-400">{t('generatingInterpretation')}</p>
+              <p className="mt-4 text-[var(--muted)]">{t('generatingInterpretation')}</p>
             </div>
           )}
 
           {error && <p className="mt-8 text-red-400">{error}</p>}
 
           {spreadInterpretation && (
-            <div className="mt-8 text-left space-y-6 text-gray-300 leading-relaxed text-lg p-8 bg-purple-900/30 rounded-lg border border-purple-700">
+            <div className="mt-8 text-left space-y-6 text-[var(--muted)] leading-relaxed text-lg p-8 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20">
                 {spreadInterpretation.relationships && renderInterpretationSection('relationships', t('interpretationRelationships'))}
                 {spreadInterpretation.finance && renderInterpretationSection('finance', t('interpretationFinance'))}
                 {spreadInterpretation.health && renderInterpretationSection('health', t('interpretationHealth'))}

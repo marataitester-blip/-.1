@@ -19,8 +19,8 @@ const Community: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto text-center py-8">
-      <h1 className="text-4xl md:text-5xl font-bold font-serif text-yellow-300">{t('communityTitle')}</h1>
-      <p className="mt-4 text-lg text-gray-300 max-w-xl mx-auto">{t('communitySubtitle')}</p>
+      <h1 className="text-4xl md:text-5xl font-bold font-serif">{t('communityTitle')}</h1>
+      <p className="mt-4 text-lg text-[var(--muted)] max-w-xl mx-auto">{t('communitySubtitle')}</p>
 
       <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {socialLinks.map(({ name, href, Icon }) => (
@@ -29,9 +29,9 @@ const Community: React.FC = () => {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col items-center justify-center p-6 bg-purple-900/30 rounded-lg border border-purple-700 hover:bg-purple-800/50 hover:border-yellow-400 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-yellow-500/10"
+            className="group flex flex-col items-center justify-center p-6 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20 hover:bg-black/20 hover:border-[var(--accent)] transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-[var(--accent)]/10"
           >
-            <Icon className="w-12 h-12 text-gray-300 group-hover:text-yellow-300 transition-colors" />
+            <Icon className="w-12 h-12 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
             <span className="mt-4 text-lg font-semibold text-white">{name}</span>
           </a>
         ))}
