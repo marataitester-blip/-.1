@@ -9,12 +9,17 @@ import SpeakerIcon from '../components/SpeakerIcon';
 import { generateSpeech } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
+import StreakWidget from '../components/StreakWidget';
+import { useStreak } from '../hooks/useStreak';
 
 const Home: React.FC = () => {
   const { t, language } = useTranslations();
   const [cardOfDay, setCardOfDay] = useState<TarotCard | null>(null);
   const [audioState, setAudioState] = useState<'idle' | 'generating' | 'playing'>('idle');
   
+  // Streak Hook
+  const { streak, updateStreak, nextMilestone, progressPercent } = useStreak();
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferCache = useRef<AudioBuffer | null>(null);
@@ -30,6 +35,9 @@ const Home: React.FC = () => {
       setCardOfDay(dailyCard);
     };
     getCardOfDay();
+    
+    // Update streak when visiting home page
+    updateStreak();
   }, []);
 
   useEffect(() => {
@@ -93,6 +101,17 @@ const Home: React.FC = () => {
 
   return (
     <div className="text-center py-8 md:py-16">
+      
+      {/* Streak Widget displayed at the top of Home */}
+      <div className="mb-12">
+        <StreakWidget 
+            currentStreak={streak.currentStreak} 
+            freezeAvailable={streak.freezeAvailable}
+            progressPercent={progressPercent}
+            nextMilestone={nextMilestone}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         {/* Card Section: First on Mobile (order-1), Second on Desktop (md:order-2) */}
         <div className="order-1 md:order-2 w-full flex flex-col items-center justify-center">

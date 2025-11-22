@@ -1,11 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Astral Hero Tarot</title>
+    
+    <!-- PWA Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#c7a87b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/card_back.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -33,6 +39,11 @@
       /* Optimizations for image rendering */
       img {
         -webkit-user-drag: none;
+      }
+      
+      /* Safe area for bottom nav on iPhone X+ */
+      .safe-area-pb {
+        padding-bottom: env(safe-area-inset-bottom);
       }
     </style>
   <script type="importmap">

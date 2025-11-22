@@ -1,6 +1,7 @@
 {
   "name": "Astral Hero Tarot",
   "short_name": "Astral Tarot",
+  "description": "Interactive Tarot readings with AI interpretations and a unique hero's journey.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f14",
@@ -10,7 +11,8 @@
     {
       "src": "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/card_back.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/card_back.png",

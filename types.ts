@@ -1,3 +1,4 @@
+
 export interface TarotCard {
   id: number;
   name: {
@@ -27,5 +28,21 @@ export interface Review {
   reply?: {
     text: string;
     date: string;
+  };
+}
+
+export type SubscriptionTier = 'free' | 'basic' | 'premium' | 'lifetime';
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'none';
+
+export interface UserProfile {
+  userId: string;
+  email: string;
+  stripeCustomerId?: string;
+  subscription: {
+    tier: SubscriptionTier;
+    status: SubscriptionStatus;
+    trialEndsAt?: string; // ISO Date String
+    currentPeriodEnd?: string; // ISO Date String
+    cancelAtPeriodEnd: boolean;
   };
 }

@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
+import { useStreak } from '../hooks/useStreak';
 
 const Header: React.FC = () => {
   const { t, language, setLanguage } = useTranslations();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { streak } = useStreak(); // Use the hook to get streak data
 
   const navLinks = [
     { path: '/readings', label: t('navReadings') },
@@ -39,9 +42,15 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+             {/* Mini Streak Indicator */}
+             <div className="hidden sm:flex items-center gap-1 bg-[#1a1a24] border border-[var(--accent)]/20 rounded-full px-3 py-1">
+                <span className="text-sm">🔥</span>
+                <span className="text-sm font-bold text-[var(--accent)]">{streak.currentStreak}</span>
+             </div>
+
             {/* Swapped order: Language switcher is first, with margin for desktop view */}
-            <div className="bg-black/30 rounded-full border border-[var(--accent)]/50 md:ml-6">
+            <div className="bg-black/30 rounded-full border border-[var(--accent)]/50 md:ml-4">
                 <button
                     onClick={() => setLanguage('en')}
                     className={`px-2 py-0.5 text-xs md:px-3 md:py-1 md:text-sm rounded-full transition-colors duration-300 ${language === 'en' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'text-[var(--muted)]'}`}
@@ -72,6 +81,10 @@ const Header: React.FC = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
             <div className="md:hidden pb-4">
+                <div className="flex items-center gap-2 mb-4 px-3">
+                    <span className="text-lg">🔥</span>
+                    <span className="text-white font-bold">{streak.currentStreak} Day Streak</span>
+                </div>
                 <nav className="flex flex-col space-y-2">
                     {navLinks.map((link) => (
                         <NavLink
