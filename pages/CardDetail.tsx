@@ -92,6 +92,7 @@ const CardDetail: React.FC = () => {
                     src={card.imageUrl} 
                     alt={card.name[language]} 
                     className="rounded-xl shadow-2xl shadow-black/60 max-w-sm w-full aspect-[3/5]"
+                    priority={true}
                 />
             </div>
             <div className="md:col-span-2">

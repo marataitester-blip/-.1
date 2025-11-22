@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations';
@@ -93,30 +94,14 @@ const Home: React.FC = () => {
   return (
     <div className="text-center py-8 md:py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div className="flex flex-col items-center md:items-start text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl font-bold font-serif leading-tight">
-            {t('homeTitle')}
-          </h1>
-          <p className="mt-4 text-lg text-[var(--muted)] max-w-xl">
-            {t('homeSubtitle')}
-          </p>
-          <div className="mt-8 p-6 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20 max-w-xl">
-             <p className="text-[var(--fg)] leading-relaxed">{t('homeDescription')}</p>
-          </div>
-          <Link
-            to="/readings"
-            className="mt-10 inline-block bg-[var(--accent)] text-[var(--bg)] font-bold py-3 px-8 rounded-full text-lg hover:bg-[#d8b88c] transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-[var(--accent)]/10"
-          >
-            {t('homeCTA')}
-          </Link>
-        </div>
-        <div className="flex flex-col items-center justify-center">
+        {/* Card Section: First on Mobile (order-1), Second on Desktop (md:order-2) */}
+        <div className="order-1 md:order-2 w-full flex flex-col items-center justify-center">
             {cardOfDay && (
                 <Link to={`/card/${cardOfDay.id}`} className="flex flex-col items-center animate-fade-in group">
-                    <div className="transition-transform duration-300 group-hover:scale-105">
-                        <Card card={cardOfDay} size="large" />
+                    <div className="transition-transform duration-300 group-hover:scale-105 relative z-10">
+                        <Card card={cardOfDay} size="large" priority={true} />
                     </div>
-                    <div className="mt-6 max-w-xs text-center p-4 bg-black/20 rounded-lg">
+                    <div className="mt-6 max-w-xs text-center p-4 bg-black/20 rounded-lg backdrop-blur-sm">
                         <h3 className="text-2xl font-serif text-[var(--accent)] transition-colors duration-300 group-hover:text-white">{cardOfDay.name[language]}</h3>
                         <p className="mt-2 text-[var(--muted)]">{cardOfDay.description[language]}</p>
                         <div className="mt-4">
@@ -132,6 +117,25 @@ const Home: React.FC = () => {
                     </div>
                 </Link>
             )}
+        </div>
+
+        {/* Text Section: Second on Mobile (order-2), First on Desktop (md:order-1) */}
+        <div className="order-2 md:order-1 flex flex-col items-center md:items-start text-center md:text-left">
+          <h1 className="text-4xl md:text-5xl font-bold font-serif leading-tight">
+            {t('homeTitle')}
+          </h1>
+          <p className="mt-4 text-lg text-[var(--muted)] max-w-xl">
+            {t('homeSubtitle')}
+          </p>
+          <div className="mt-8 p-6 bg-[var(--card-bg)] rounded-lg border border-[var(--accent)]/20 max-w-xl">
+             <p className="text-[var(--fg)] leading-relaxed">{t('homeDescription')}</p>
+          </div>
+          <Link
+            to="/readings"
+            className="mt-10 inline-block bg-[var(--accent)] text-[var(--bg)] font-bold py-3 px-8 rounded-full text-lg hover:bg-[#d8b88c] transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-[var(--accent)]/10"
+          >
+            {t('homeCTA')}
+          </Link>
         </div>
       </div>
     </div>
