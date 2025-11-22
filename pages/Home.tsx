@@ -99,7 +99,7 @@ const Home: React.FC = () => {
             {cardOfDay && (
                 <Link to={`/card/${cardOfDay.id}`} className="flex flex-col items-center animate-fade-in group">
                     <div className="transition-transform duration-300 group-hover:scale-105 relative z-10">
-                        <Card card={cardOfDay} size="large" priority={true} />
+                        <Card card={cardOfDay} size="large" />
                     </div>
                     <div className="mt-6 max-w-xs text-center p-4 bg-black/20 rounded-lg backdrop-blur-sm">
                         <h3 className="text-2xl font-serif text-[var(--accent)] transition-colors duration-300 group-hover:text-white">{cardOfDay.name[language]}</h3>

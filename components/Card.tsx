@@ -8,10 +8,9 @@ interface CardProps {
   card: TarotCard | null;
   isFlipped?: boolean;
   size?: 'small' | 'medium' | 'large';
-  priority?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ card, isFlipped = true, size = 'medium', priority = false }) => {
+const Card: React.FC<CardProps> = ({ card, isFlipped = true, size = 'medium' }) => {
   const { language } = useTranslations();
 
   const sizeClasses = {
@@ -33,7 +32,6 @@ const Card: React.FC<CardProps> = ({ card, isFlipped = true, size = 'medium', pr
             src={cardBackUrl}
             alt="Tarot Card Back" 
             className="w-full h-full rounded-xl shadow-lg shadow-black/50"
-            priority={priority} // Prioritize back if the card itself is high priority
           />
         </div>
         
@@ -45,7 +43,6 @@ const Card: React.FC<CardProps> = ({ card, isFlipped = true, size = 'medium', pr
                 src={card.imageUrl} 
                 alt={card.name[language]} 
                 className="w-full h-full rounded-xl shadow-lg shadow-purple-900/50"
-                priority={priority}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-2 text-center rounded-b-xl">
                 <p className="text-white font-bold text-sm sm:text-base font-serif tracking-wider">
